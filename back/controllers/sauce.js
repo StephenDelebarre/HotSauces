@@ -1,6 +1,8 @@
 const Sauces = require("../models/sauce");
 const fs = require("fs");
 
+// création de l'objet sauce
+
 exports.createSauce = (req, res, next) => {
     const sauce = JSON.parse(req.body.sauce);
     delete sauce._id;
@@ -17,42 +19,36 @@ exports.createSauce = (req, res, next) => {
     .catch(error => res.status(400).json({error}));
 };
 
+// fonction de modification de l'objet sauce
+
 exports.modifySauce = (req, res, next) => {
     const sauce = req.file ? {
-        ...JSON.parse(req.body.sauces),
+        ...JSON.parse(req.body.sauce),
         imageUrl: `${req.protocol}://${req.get("host")}/images/${req.file.filename}`
     } : {...req.body};
 
-    delete sauce._userId;
-
-    Sauces.findOne({_id: req.params.id})
-        .then((Sauce) => {
-            if (Sauce.userId != req.body.userId) {
-                res.status(401).json({ message: 'Non autorisé'});
-            } else {
-            Sauces.updateOne({ _id: req.params.id}, {...sauce, _id: req.params.id})
-                .then(() => res.status(200).json({ message: "Objet modifié"}))
-                .catch(error => res.status(401).json({error}));
-            };
-        });
+    Sauces.updateOne({ _id: req.params.id}, {...sauce, _id: req.params.id})
+        .then(() => res.status(200).json({ message: "Objet modifié"}))
+        .catch(() => res.status(401));
 };
 
+// suppresion de l'objet sauce
+
 exports.deleteSauce = (req, res, next) => {
-    Sauces.deleteOne({ _id: req.params.id })
+    Sauces.findOne({ _id: req.params.id }) 
       .then(sauces => {
-        if (sauces.userId != req.auth.userId) {
-          res.status(401).json({ message: 'Non autorisé'});
-        } else {
-          const filename = sauces.imageUrl.split('/images/')[1];
-          fs.unlink(`image/${filename}`, () => {
+        const fileName = sauces.imageUrl.split("images/")[1];
+        console.log("fichier", fileName)
+          fs.unlink(`images/${fileName}`, () => {
             Sauces.deleteOne({_id: req.params.id})
-              .then(() => res.status(200).json({ message: "Objet modifié"}))
-              .catch(error => res.status(401).json({error}));
+              .then(() => res.status(200).json({ message: "Objet supprimé"}))
+              .catch(() => res.status(400));
           })
-        };
       })
-      .catch(error => res.status(500).json({error}));
+      .catch(() => res.status(500));
   };
+
+  // fonction qui récupère une sauce pour afficher sa page
   
   exports.getOneSauce = (req, res, next) => { 
     Sauces.findOne({ _id: req.params.id}) 
@@ -60,12 +56,16 @@ exports.deleteSauce = (req, res, next) => {
       .catch(error => res.status(404).json({error}));
   };
   
+  // fonction qui récupère toutes les sauces pour les afficher sur la page principale 
+
     exports.getAllSauces = (req, res, next) => {
     Sauces.find()
       .then(Sauces => res.status(200).json(Sauces))
       .catch(error => res.status(400).json({error}));
   };
 
+  // fonction de like et de dislike des sauce
+  
   exports.likeSauce = (req, res, next) => {
     Sauces.findOne({ _id: req.params.id })
         .then(sauce => {
@@ -89,7 +89,7 @@ exports.deleteSauce = (req, res, next) => {
                 sauce.dislikes -= 1;
             }
             sauce.save();
-            res.status(201).json({ message: 'Like / Dislike mis à jour' });
+            res.status(201).json({ message: "Like / Dislike mis à jour" });
         })
         .catch(error => res.status(500).json({ error }));
 };

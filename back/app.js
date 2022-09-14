@@ -4,7 +4,6 @@ const cors = require("cors");
 const routes = require("./routes/sauce");
 const userRoutes = require("./routes/user");
 const path = require("path");
-const helmet = require("helmet");
 require("dotenv").config();
 
 const app = express();
@@ -19,7 +18,6 @@ mongoose.connect('mongodb+srv://' + process.env.DB_USERNAME + ':' + process.env.
 
 app.use(express.json());
 app.use(cors()); 
-app.use(helmet());
 
 // headers qui enmpêches les erreurs CORS
 
